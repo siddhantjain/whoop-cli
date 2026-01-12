@@ -5,12 +5,12 @@
 export const BASE_URL = 'https://api.prod.whoop.com/developer';
 
 export const ENDPOINTS = {
-  profile: '/v1/user/profile/basic',
-  body: '/v1/user/measurement/body',
-  sleep: '/v1/activity/sleep',
-  recovery: '/v1/recovery',
-  workout: '/v1/activity/workout',
-  cycle: '/v1/cycle',
+  profile: '/v2/user/profile/basic',
+  body: '/v2/user/measurement/body',
+  sleep: '/v2/activity/sleep',
+  recovery: '/v2/recovery',
+  workout: '/v2/activity/workout',
+  cycle: '/v2/cycle',
 } as const;
 
 export type EndpointKey = keyof typeof ENDPOINTS;
