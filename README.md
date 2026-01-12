@@ -190,6 +190,28 @@ npm run build
 
 Contributions welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 
+## Privacy
+
+This application accesses WHOOP health data via the official WHOOP API v2.
+
+**Data Collection & Storage:**
+- Health data (sleep, recovery, workouts, cycles) is fetched only when you run commands
+- OAuth tokens are stored locally in `~/.whoop-cli/`, encrypted with AES-256
+- No data is transmitted to any third-party servers
+- No analytics, tracking, or telemetry is implemented
+
+**Data Usage:**
+- Data is displayed locally or output as JSON for your own use
+- You control what you do with the output (pipe to files, other tools, etc.)
+- When used with AI agents, data is processed according to your agent's privacy policy
+
+**Your Rights:**
+- Revoke access anytime at [WHOOP App Settings](https://app.whoop.com/settings)
+- Delete local tokens with `whoop auth logout`
+- All data remains under your control
+
+**Contact:** post.siddhant@gmail.com
+
 ## License
 
 MIT © [Siddhant Jain](https://github.com/siddhantjain)
