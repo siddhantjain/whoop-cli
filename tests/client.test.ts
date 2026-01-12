@@ -46,7 +46,7 @@ describe('API Client', () => {
 
       expect(result).toEqual(mockProfile);
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/v1/user/profile/basic'),
+        expect.stringContaining('/v2/user/profile/basic'),
         expect.objectContaining({
           headers: expect.objectContaining({
             Authorization: 'Bearer mock_access_token',
