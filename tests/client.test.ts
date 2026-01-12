@@ -12,7 +12,15 @@ vi.mock('../src/auth/tokens.js', () => ({
 }));
 
 // Import after mocking
-import { getProfile, getBody, getRecovery, getSleep, getWorkout, getCycle, fetchData } from '../src/api/client.js';
+import {
+  getProfile,
+  getBody,
+  getRecovery,
+  getSleep,
+  getWorkout,
+  getCycle,
+  fetchData,
+} from '../src/api/client.js';
 import { WhoopError, RateLimitError, ExitCode } from '../src/utils/errors.js';
 
 describe('API Client', () => {
