@@ -185,7 +185,8 @@ describe('API Client', () => {
         records: [
           {
             id: 1,
-            days: ['2026-01-12'],
+            start: '2026-01-12T00:00:00Z',
+            end: '2026-01-13T00:00:00Z',
           },
         ],
         next_token: undefined,
@@ -199,7 +200,7 @@ describe('API Client', () => {
       const result = await getCycle({});
 
       expect(result).toHaveLength(1);
-      expect(result[0]?.days).toContain('2026-01-12');
+      expect(result[0]?.start).toBe('2026-01-12T00:00:00Z');
     });
   });
 
