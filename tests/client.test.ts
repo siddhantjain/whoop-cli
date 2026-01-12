@@ -12,7 +12,7 @@ vi.mock('../src/auth/tokens.js', () => ({
 }));
 
 // Import after mocking
-import { getProfile, getBody, getRecovery, fetchData } from '../src/api/client.js';
+import { getProfile, getBody, getRecovery, getSleep, getWorkout, getCycle, fetchData } from '../src/api/client.js';
 import { WhoopError, RateLimitError, ExitCode } from '../src/utils/errors.js';
 
 describe('API Client', () => {
@@ -124,6 +124,82 @@ describe('API Client', () => {
 
       expect(result).toHaveLength(2);
       expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('getSleep', () => {
+    it('fetches sleep data', async () => {
+      const mockResponse = {
+        records: [
+          {
+            id: 1,
+            score: { sleep_performance_percentage: 85 },
+          },
+        ],
+        next_token: undefined,
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockResponse),
+      });
+
+      const result = await getSleep({
+        start: '2026-01-12T04:00:00Z',
+        end: '2026-01-13T04:00:00Z',
+      });
+
+      expect(result).toHaveLength(1);
+      expect(result[0]?.score.sleep_performance_percentage).toBe(85);
+    });
+  });
+
+  describe('getWorkout', () => {
+    it('fetches workout data', async () => {
+      const mockResponse = {
+        records: [
+          {
+            id: 1,
+            sport_id: 1,
+            score: { strain: 12.5 },
+          },
+        ],
+        next_token: undefined,
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockResponse),
+      });
+
+      const result = await getWorkout({});
+
+      expect(result).toHaveLength(1);
+      expect(result[0]?.score.strain).toBe(12.5);
+    });
+  });
+
+  describe('getCycle', () => {
+    it('fetches cycle data', async () => {
+      const mockResponse = {
+        records: [
+          {
+            id: 1,
+            days: ['2026-01-12'],
+          },
+        ],
+        next_token: undefined,
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockResponse),
+      });
+
+      const result = await getCycle({});
+
+      expect(result).toHaveLength(1);
+      expect(result[0]?.days).toContain('2026-01-12');
     });
   });
 
