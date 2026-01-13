@@ -103,6 +103,7 @@ export async function refreshAccessToken(tokens: OAuthTokens): Promise<OAuthToke
       refresh_token: tokens.refresh_token,
       client_id: clientId,
       client_secret: clientSecret,
+      scope: 'offline',
     }),
   });
 
