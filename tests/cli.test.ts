@@ -22,9 +22,9 @@ function runCLI(args: string): { stdout: string; stderr: string; exitCode: numbe
   } catch (error: unknown) {
     const execError = error as { stdout?: string; stderr?: string; status?: number };
     return {
-      stdout: execError.stdout || '',
-      stderr: execError.stderr || '',
-      exitCode: execError.status || 1,
+      stdout: execError.stdout ?? '',
+      stderr: execError.stderr ?? '',
+      exitCode: execError.status ?? 1,
     };
   }
 }
@@ -66,7 +66,8 @@ describe('CLI', () => {
 
       // If there's sleep data, it should be from the requested date
       if (data.sleep && data.sleep.length > 0) {
-        const sleepDate = data.sleep[0].start.split('T')[0];
+        const sleepStart = data.sleep[0].start as string;
+        const sleepDate = sleepStart.split('T')[0];
         expect(sleepDate).toBe('2026-01-06');
       }
     });

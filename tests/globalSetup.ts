@@ -71,7 +71,7 @@ export async function setup() {
   });
 
   // Return cleanup function
-  return async () => {
+  return (): void => {
     if (mockServer) {
       mockServer.close();
     }
