@@ -7,8 +7,8 @@ import { createServer, type Server } from 'node:http';
 import { writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { encrypt } from '../src/utils/crypto';
-import type { OAuthTokens } from '../src/types/whoop';
+import { encrypt } from '../src/utils/crypto.js';
+import type { OAuthTokens } from '../src/types/whoop.js';
 
 let mockServer: Server;
 let mockTokenDir: string;
