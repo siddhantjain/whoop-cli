@@ -34,11 +34,11 @@ jobs:
       - name: Format check
         run: npm run format:check
 
-      - name: Test
-        run: npm run test:coverage
-
       - name: Build
         run: npm run build
+
+      - name: Test
+        run: npm run test:coverage
 
   release:
     needs: test
