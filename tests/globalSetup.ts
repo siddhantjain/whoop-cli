@@ -19,18 +19,36 @@ function createMockResponse(url: string): string {
   const date = start ? start.split('T')[0] : '2026-01-01';
 
   if (url.includes('/v2/user/profile/basic')) {
-    return JSON.stringify({ user_id: 123456, email: 'test@example.com', first_name: 'Test', last_name: 'User' });
+    return JSON.stringify({
+      user_id: 123456,
+      email: 'test@example.com',
+      first_name: 'Test',
+      last_name: 'User',
+    });
   } else if (url.includes('/v2/user/measurement/body')) {
     return JSON.stringify({ height_meter: 1.78, weight_kilogram: 75, max_heart_rate: 185 });
   } else if (url.includes('/v2/activity/sleep')) {
     return JSON.stringify({
-      records: [{ id: 12345, start: `${date}T00:00:00.000Z`, end: `${date}T08:00:00.000Z`, score: { sleep_performance_percentage: 85 } }],
+      records: [
+        {
+          id: 12345,
+          start: `${date}T00:00:00.000Z`,
+          end: `${date}T08:00:00.000Z`,
+          score: { sleep_performance_percentage: 85 },
+        },
+      ],
       next_token: null,
     });
   } else if (url.includes('/v2/recovery')) {
-    return JSON.stringify({ records: [{ cycle_id: 67890, score: { recovery_score: 72 } }], next_token: null });
+    return JSON.stringify({
+      records: [{ cycle_id: 67890, score: { recovery_score: 72 } }],
+      next_token: null,
+    });
   } else if (url.includes('/v2/cycle')) {
-    return JSON.stringify({ records: [{ id: 67890, start: `${date}T04:00:00.000Z`, score: { strain: 8.5 } }], next_token: null });
+    return JSON.stringify({
+      records: [{ id: 67890, start: `${date}T04:00:00.000Z`, score: { strain: 8.5 } }],
+      next_token: null,
+    });
   } else if (url.includes('/v2/activity/workout')) {
     return JSON.stringify({ records: [], next_token: null });
   }
@@ -51,7 +69,9 @@ export async function setup() {
   };
 
   const encrypted = encrypt(JSON.stringify(mockTokens));
-  writeFileSync(join(mockTokenDir, 'tokens.json'), JSON.stringify(encrypted, null, 2), { mode: 0o600 });
+  writeFileSync(join(mockTokenDir, 'tokens.json'), JSON.stringify(encrypted, null, 2), {
+    mode: 0o600,
+  });
 
   // Start mock server
   await new Promise<void>((resolve) => {

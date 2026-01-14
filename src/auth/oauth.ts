@@ -27,7 +27,7 @@ const SCOPES = [
   'read:sleep',
   'read:workout',
   'read:cycles',
-  'offline',  // Required to get refresh_token
+  'offline', // Required to get refresh_token
 ].join(' ');
 
 /**
