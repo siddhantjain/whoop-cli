@@ -26,7 +26,11 @@ function output(data: CombinedOutput, pretty: boolean): void {
 // Program Setup
 // ============================================================================
 
-program.name('whoop').description('CLI for fetching WHOOP health data').version('0.1.0');
+program
+  .name('whoop')
+  .description('CLI for fetching WHOOP health data')
+  .version('0.1.0')
+  .enablePositionalOptions();
 
 // ============================================================================
 // Auth Commands

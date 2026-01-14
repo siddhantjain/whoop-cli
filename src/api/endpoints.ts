@@ -2,7 +2,7 @@
  * WHOOP API v2 endpoints
  */
 
-export const BASE_URL = 'https://api.prod.whoop.com/developer';
+export const BASE_URL = process.env['WHOOP_API_URL'] ?? 'https://api.prod.whoop.com/developer';
 
 export const ENDPOINTS = {
   profile: '/v2/user/profile/basic',
