@@ -1,9 +1,9 @@
 /**
  * Adaptive Wake Detection Algorithm
- * 
+ *
  * Uses rolling 7-day sleep statistics to determine if the user is
  * actually awake for the day vs experiencing a mid-sleep wake.
- * 
+ *
  * The algorithm adapts to individual sleep patterns rather than
  * using fixed thresholds.
  */
@@ -113,7 +113,7 @@ export function saveHistory(history: SleepRecord[]): void {
  */
 export function addToHistory(record: SleepRecord): void {
   const history = loadHistory();
-  const existing = history.findIndex(h => h.date === record.date);
+  const existing = history.findIndex((h) => h.date === record.date);
   if (existing >= 0) {
     history[existing] = record; // Update existing
   } else {
@@ -129,7 +129,7 @@ export function addToHistory(record: SleepRecord): void {
  */
 export function calculateRollingStats(history: SleepRecord[]): RollingStats {
   const recent = history.slice(-ROLLING_WINDOW);
-  
+
   if (recent.length === 0) {
     // Default stats for new users
     return {
@@ -150,14 +150,14 @@ export function calculateRollingStats(history: SleepRecord[]): RollingStats {
   const min = (arr: number[]) => Math.min(...arr);
 
   return {
-    avgEndHour: Math.round(avg(recent.map(r => r.endUtcHour)) * 10) / 10,
-    minEndHour: min(recent.map(r => r.endUtcHour)),
-    avgDuration: Math.round(avg(recent.map(r => r.durationHours)) * 10) / 10,
-    minDuration: Math.round(min(recent.map(r => r.durationHours)) * 10) / 10,
-    avgCycles: Math.round(avg(recent.map(r => r.cycles)) * 10) / 10,
-    minCycles: min(recent.map(r => r.cycles)),
-    avgPerformance: Math.round(avg(recent.map(r => r.performance))),
-    minPerformance: min(recent.map(r => r.performance)),
+    avgEndHour: Math.round(avg(recent.map((r) => r.endUtcHour)) * 10) / 10,
+    minEndHour: min(recent.map((r) => r.endUtcHour)),
+    avgDuration: Math.round(avg(recent.map((r) => r.durationHours)) * 10) / 10,
+    minDuration: Math.round(min(recent.map((r) => r.durationHours)) * 10) / 10,
+    avgCycles: Math.round(avg(recent.map((r) => r.cycles)) * 10) / 10,
+    minCycles: min(recent.map((r) => r.cycles)),
+    avgPerformance: Math.round(avg(recent.map((r) => r.performance))),
+    minPerformance: min(recent.map((r) => r.performance)),
     sampleSize: recent.length,
   };
 }
@@ -189,16 +189,16 @@ export function parseSleepRecord(sleep: WhoopSleepData): SleepRecord | null {
  */
 export function checkWake(currentSleep: WhoopSleepData, history?: SleepRecord[]): WakeCheckResult {
   const sleepRecord = parseSleepRecord(currentSleep);
-  
+
   if (!sleepRecord) {
     throw new Error('Invalid sleep data');
   }
 
   // Load history if not provided
   const sleepHistory = history ?? loadHistory();
-  
+
   // Calculate rolling stats (excluding today)
-  const historyWithoutToday = sleepHistory.filter(h => h.date !== sleepRecord.date);
+  const historyWithoutToday = sleepHistory.filter((h) => h.date !== sleepRecord.date);
   const stats = calculateRollingStats(historyWithoutToday);
 
   // Calculate adaptive thresholds
@@ -232,7 +232,7 @@ export function checkWake(currentSleep: WhoopSleepData, history?: SleepRecord[])
       detail: `${sleepRecord.endUtcHour} UTC < ${thresholds.endHourMin} UTC (too early)`,
     });
   }
-  
+
   if (endHourGood) {
     score += 2;
     checks.push({
@@ -346,28 +346,28 @@ export function checkWake(currentSleep: WhoopSleepData, history?: SleepRecord[])
 export function formatWakeResult(result: WakeCheckResult): string {
   const status = result.isAwake ? '✅ AWAKE' : '❌ NOT AWAKE (mid-sleep wake detected)';
   const confidence = `Confidence: ${result.confidence} (${result.stats.sampleSize} days of history)`;
-  
+
   let output = `\n${status}\n`;
   output += `Score: ${result.score}/${result.maxScore} (threshold: 6)\n`;
   output += `${confidence}\n\n`;
-  
+
   output += `Current Sleep:\n`;
   output += `  End time: ${result.sleep.endTime}\n`;
   output += `  Duration: ${result.sleep.durationHours}h\n`;
   output += `  Cycles: ${result.sleep.cycles}\n`;
   output += `  Performance: ${result.sleep.performance}%\n\n`;
-  
+
   output += `Adaptive Thresholds (from your history):\n`;
   output += `  End hour: >= ${result.thresholds.endHourMin} UTC\n`;
   output += `  Duration: >= ${result.thresholds.durationMin}h\n`;
   output += `  Cycles: >= ${result.thresholds.cyclesMin}\n`;
   output += `  Performance: >= ${result.thresholds.performanceMin}%\n\n`;
-  
+
   output += `Checks:\n`;
   for (const check of result.checks) {
     const icon = check.passed ? '✓' : '✗';
     output += `  ${icon} ${check.name}: ${check.detail}\n`;
   }
-  
+
   return output;
 }
