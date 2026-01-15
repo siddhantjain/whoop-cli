@@ -15,10 +15,9 @@
  * - 3: Rate limit (need to wait)
  */
 
-import { describe, it, expect, beforeAll, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
-import { existsSync, rmSync, mkdirSync, writeFileSync } from 'node:fs';
 
 const CLI_PATH = join(import.meta.dirname, '..', 'dist', 'cli.js');
 const TEST_TOKEN_DIR = join(import.meta.dirname, '.test-tokens');
@@ -186,7 +185,8 @@ describe('Agent Workflows - Correct Patterns', () => {
     });
 
     it('should not try to parse --pretty output as JSON', () => {
-      const agent = new SimulatedWhoopAgent();
+      // Agent created to demonstrate the pattern
+      void new SimulatedWhoopAgent();
       
       // Simulate agent getting pretty output and trying to parse
       const mockPrettyOutput = `
@@ -253,7 +253,7 @@ describe('Agent Workflows - Anti-Patterns', () => {
       const result = agent.naiveRun('recovery');
       
       // Naive agent didn't check exit code
-      expect(agent.actions[0].checkedExitCode).toBe(false);
+      expect(agent.actions[0]?.checkedExitCode).toBe(false);
       
       // Data is empty or error message, not valid JSON
       const parsed = agent.parseOutput(result);
@@ -332,7 +332,7 @@ describe('Agent Workflows - Anti-Patterns', () => {
       const agent = new SimulatedWhoopAgent('/tmp/nonexistent-whoop-tokens-xyz');
       
       // Naive agent skips auth check and just fetches
-      const result = agent.naiveRun('recovery');
+      void agent.naiveRun('recovery');
       
       // Without valid tokens, we expect auth error (exit code 2)
       // The point is: agent should have checked auth status first
@@ -341,7 +341,7 @@ describe('Agent Workflows - Anti-Patterns', () => {
       // Even if it succeeds (unlikely), the anti-pattern is documented:
       // - Don't fetch without checking auth first
       // - Check auth status to give users actionable feedback
-      expect(agent.actions[0].checkedExitCode).toBe(false);  // Naive agent didn't check!
+      expect(agent.actions[0]?.checkedExitCode).toBe(false);  // Naive agent didn't check!
     });
   });
 });
@@ -374,7 +374,8 @@ describe('Agent Workflows - Edge Cases', () => {
 
   describe('Empty Data Handling', () => {
     it('should handle days with no workouts gracefully', () => {
-      const agent = new SimulatedWhoopAgent();
+      // Agent created to demonstrate the pattern
+      void new SimulatedWhoopAgent();
       
       // Not every day has a workout
       // Agent should handle empty arrays, not treat as error
@@ -460,7 +461,7 @@ describe('Agent Workflows - Error Recovery', () => {
 
       // Agent should parse retry-after and wait
       const retryAfterMatch = mockRateLimitResult.stderr.match(/Retry after: (\d+)/);
-      if (retryAfterMatch) {
+      if (retryAfterMatch && retryAfterMatch[1]) {
         const retryAfterSeconds = parseInt(retryAfterMatch[1], 10);
         expect(retryAfterSeconds).toBe(60);
         
@@ -526,14 +527,16 @@ describe('Agent Workflows - Real World Scenarios', () => {
 
   describe('Weekly Report Generation', () => {
     it('should fetch multiple days of data for weekly report', () => {
-      const agent = new SimulatedWhoopAgent();
+      // Agent created to demonstrate the pattern
+      void new SimulatedWhoopAgent();
       
       // Generate last 7 days of dates
       const dates: string[] = [];
       for (let i = 0; i < 7; i++) {
         const d = new Date();
         d.setDate(d.getDate() - i);
-        dates.push(d.toISOString().split('T')[0]);
+        const dateStr = d.toISOString().split('T')[0];
+        if (dateStr) dates.push(dateStr);
       }
 
       // Agent should fetch each day
