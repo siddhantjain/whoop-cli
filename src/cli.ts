@@ -9,6 +9,7 @@ import { fetchData } from './api/client.js';
 import { getWhoopDay, validateISODate } from './utils/date.js';
 import { handleError, WhoopError, ExitCode } from './utils/errors.js';
 import { formatPretty, formatSummary } from './utils/format.js';
+import { checkWake, formatWakeResult, loadHistory, addToHistory, parseSleepRecord } from './utils/wake.js';
 import type { DataType, CombinedOutput } from './types/whoop.js';
 
 const program = new Command();
@@ -128,6 +129,89 @@ program
 
       // eslint-disable-next-line no-console
       console.log(formatSummary(result));
+    } catch (error) {
+      handleError(error);
+    }
+  });
+
+// ============================================================================
+// Wake Detection Command
+// ============================================================================
+
+program
+  .command('wake')
+  .description('Check if user is actually awake (adaptive sleep pattern detection)')
+  .option('-p, --pretty', 'Human-readable output')
+  .option('--seed', 'Seed history with recent sleep data (run once to initialize)')
+  .action(async (options: { pretty?: boolean; seed?: boolean }) => {
+    try {
+      // If seeding, fetch last 14 days and populate history
+      if (options.seed) {
+        // eslint-disable-next-line no-console
+        console.error('Seeding sleep history with last 14 days...');
+        
+        const today = new Date();
+        for (let i = 13; i >= 0; i--) {
+          const date = new Date(today);
+          date.setDate(date.getDate() - i);
+          const dateStr = date.toISOString().split('T')[0] as string;
+          
+          try {
+            const result = await fetchData(['sleep'], dateStr, { limit: 10 });
+            const sleeps = result.sleep || [];
+            // Find primary sleep (not nap)
+            const primarySleep = sleeps.find((s: any) => !s.nap);
+            if (primarySleep) {
+              const record = parseSleepRecord(primarySleep);
+              if (record) {
+                addToHistory(record);
+                // eslint-disable-next-line no-console
+                console.error(`  ✓ ${dateStr}: ${record.durationHours.toFixed(1)}h, ${record.cycles} cycles`);
+              }
+            }
+          } catch {
+            // eslint-disable-next-line no-console
+            console.error(`  ✗ ${dateStr}: no data`);
+          }
+        }
+        
+        // eslint-disable-next-line no-console
+        console.error('Done! History seeded.');
+        
+        const history = loadHistory();
+        // eslint-disable-next-line no-console
+        console.log(JSON.stringify({ seeded: true, records: history.length }, null, 2));
+        return;
+      }
+
+      // Fetch today's sleep
+      const date = getWhoopDay();
+      const result = await fetchData(['sleep'], date, { limit: 10 });
+      
+      const sleeps = result.sleep || [];
+      if (sleeps.length === 0) {
+        // eslint-disable-next-line no-console
+        console.log(JSON.stringify({
+          isAwake: false,
+          reason: 'no_sleep_data',
+          message: 'No sleep data available yet. User may still be asleep.',
+        }, null, 2));
+        return;
+      }
+
+      // Find primary sleep (not nap, most recent)
+      const primarySleep = sleeps.find((s: any) => !s.nap) || sleeps[0];
+      
+      // Run wake detection
+      const wakeResult = checkWake(primarySleep);
+      
+      if (options.pretty) {
+        // eslint-disable-next-line no-console
+        console.log(formatWakeResult(wakeResult));
+      } else {
+        // eslint-disable-next-line no-console
+        console.log(JSON.stringify(wakeResult, null, 2));
+      }
     } catch (error) {
       handleError(error);
     }
