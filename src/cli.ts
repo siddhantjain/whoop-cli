@@ -202,6 +202,16 @@ program
       // Find primary sleep (not nap, most recent)
       const primarySleep = sleeps.find((s: { nap?: boolean }) => !s.nap) ?? sleeps[0];
       
+      if (!primarySleep) {
+        // eslint-disable-next-line no-console
+        console.log(JSON.stringify({
+          isAwake: false,
+          reason: 'no_valid_sleep',
+          message: 'No valid sleep data found.',
+        }, null, 2));
+        return;
+      }
+
       // Run wake detection
       const wakeResult = checkWake(primarySleep);
       

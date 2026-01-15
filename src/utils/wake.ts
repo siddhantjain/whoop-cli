@@ -328,7 +328,7 @@ export function checkWake(currentSleep: WhoopSleepData, history?: SleepRecord[])
     maxScore: 10,
     confidence,
     sleep: {
-      endTime: currentSleep.end,
+      endTime: currentSleep.end ?? '',
       endHourUtc: sleepRecord.endUtcHour,
       durationHours: Math.round(sleepRecord.durationHours * 10) / 10,
       cycles: sleepRecord.cycles,
