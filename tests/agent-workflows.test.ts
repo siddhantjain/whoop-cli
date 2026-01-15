@@ -95,7 +95,7 @@ class SimulatedWhoopAgent {
   /**
    * BEST PATTERN: Check auth status before fetching data
    */
-  async smartFetchWithAuthCheck(dataType: string, date?: string): Promise<CLIResult> {
+  smartFetchWithAuthCheck(dataType: string, date?: string): CLIResult {
     // Step 1: Check auth status
     const authResult = this.smartRun('auth status');
     
@@ -112,7 +112,7 @@ class SimulatedWhoopAgent {
   /**
    * Parse JSON output safely
    */
-  parseOutput(result: CLIResult): unknown | null {
+  parseOutput(result: CLIResult): unknown {
     if (result.exitCode !== 0) {
       return null;
     }
@@ -296,9 +296,9 @@ describe('Agent Workflows - Anti-Patterns', () => {
       
       // Even if command succeeds, data will be empty
       if (result.exitCode === 0) {
-        const data = JSON.parse(result.stdout);
+        const data = JSON.parse(result.stdout) as { recovery?: unknown[] };
         // Recovery array will be empty for future date
-        expect(data.recovery || []).toHaveLength(0);
+        expect(data.recovery ?? []).toHaveLength(0);
       }
     });
   });
@@ -461,7 +461,7 @@ describe('Agent Workflows - Error Recovery', () => {
 
       // Agent should parse retry-after and wait
       const retryAfterMatch = mockRateLimitResult.stderr.match(/Retry after: (\d+)/);
-      if (retryAfterMatch && retryAfterMatch[1]) {
+      if (retryAfterMatch?.[1]) {
         const retryAfterSeconds = parseInt(retryAfterMatch[1], 10);
         expect(retryAfterSeconds).toBe(60);
         

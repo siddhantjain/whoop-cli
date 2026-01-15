@@ -17,6 +17,22 @@ const HISTORY_FILE = join(CONFIG_DIR, 'sleep-history.json');
 const HISTORY_DAYS = 14; // Keep 2 weeks of history
 const ROLLING_WINDOW = 7; // Use 7 days for rolling stats
 
+// WHOOP API sleep data structure
+interface WhoopSleepScore {
+  stage_summary?: {
+    total_in_bed_time_milli?: number;
+    sleep_cycle_count?: number;
+  };
+  sleep_performance_percentage?: number;
+  sleep_efficiency_percentage?: number;
+}
+
+interface WhoopSleepData {
+  start?: string;
+  end?: string;
+  score?: WhoopSleepScore;
+}
+
 export interface SleepRecord {
   date: string;
   endUtcHour: number;
@@ -74,7 +90,7 @@ export function loadHistory(): SleepRecord[] {
   }
   try {
     const data = readFileSync(HISTORY_FILE, 'utf-8');
-    return JSON.parse(data);
+    return JSON.parse(data) as SleepRecord[];
   } catch {
     return [];
   }
@@ -149,28 +165,29 @@ export function calculateRollingStats(history: SleepRecord[]): RollingStats {
 /**
  * Parse WHOOP sleep data into a SleepRecord
  */
-export function parseSleepRecord(sleep: any): SleepRecord | null {
-  if (!sleep || !sleep.end || !sleep.score) {
+export function parseSleepRecord(sleep: WhoopSleepData): SleepRecord | null {
+  if (!sleep?.end || !sleep?.score || !sleep?.start) {
     return null;
   }
 
   const endTime = new Date(sleep.end);
   const stages = sleep.score.stage_summary;
+  const startDate = sleep.start.split('T')[0] ?? '';
 
   return {
-    date: sleep.start.split('T')[0],
+    date: startDate,
     endUtcHour: endTime.getUTCHours(),
-    durationHours: (stages.total_in_bed_time_milli || 0) / 3600000,
-    cycles: stages.sleep_cycle_count || 0,
-    performance: sleep.score.sleep_performance_percentage || 0,
-    efficiency: sleep.score.sleep_efficiency_percentage || 0,
+    durationHours: (stages?.total_in_bed_time_milli ?? 0) / 3600000,
+    cycles: stages?.sleep_cycle_count ?? 0,
+    performance: sleep.score.sleep_performance_percentage ?? 0,
+    efficiency: sleep.score.sleep_efficiency_percentage ?? 0,
   };
 }
 
 /**
  * Main wake detection algorithm
  */
-export function checkWake(currentSleep: any, history?: SleepRecord[]): WakeCheckResult {
+export function checkWake(currentSleep: WhoopSleepData, history?: SleepRecord[]): WakeCheckResult {
   const sleepRecord = parseSleepRecord(currentSleep);
   
   if (!sleepRecord) {

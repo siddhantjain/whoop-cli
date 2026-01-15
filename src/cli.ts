@@ -158,9 +158,9 @@ program
           
           try {
             const result = await fetchData(['sleep'], dateStr, { limit: 10 });
-            const sleeps = result.sleep || [];
+            const sleeps = result.sleep ?? [];
             // Find primary sleep (not nap)
-            const primarySleep = sleeps.find((s: any) => !s.nap);
+            const primarySleep = sleeps.find((s: { nap?: boolean }) => !s.nap);
             if (primarySleep) {
               const record = parseSleepRecord(primarySleep);
               if (record) {
@@ -188,7 +188,7 @@ program
       const date = getWhoopDay();
       const result = await fetchData(['sleep'], date, { limit: 10 });
       
-      const sleeps = result.sleep || [];
+      const sleeps = result.sleep ?? [];
       if (sleeps.length === 0) {
         // eslint-disable-next-line no-console
         console.log(JSON.stringify({
@@ -200,7 +200,7 @@ program
       }
 
       // Find primary sleep (not nap, most recent)
-      const primarySleep = sleeps.find((s: any) => !s.nap) || sleeps[0];
+      const primarySleep = sleeps.find((s: { nap?: boolean }) => !s.nap) ?? sleeps[0];
       
       // Run wake detection
       const wakeResult = checkWake(primarySleep);
