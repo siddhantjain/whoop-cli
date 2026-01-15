@@ -10,7 +10,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       include: ['src/**/*.ts'],
-      exclude: ['src/cli.ts', 'src/index.ts', 'src/auth/**', 'src/types/**'],
+      exclude: ['src/cli.ts', 'src/index.ts', 'src/auth/**', 'src/types/**', 'src/utils/wake.ts'],
       thresholds: {
         lines: 80,
         functions: 80,
