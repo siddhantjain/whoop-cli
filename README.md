@@ -109,6 +109,8 @@ whoop --date 2026-01-10 --recovery --sleep
 | `-p, --pretty` | Human-readable output |
 | `-l, --limit <n>` | Max records per request |
 | `-a, --all` | Fetch all pages (pagination) |
+| `--progress` | Show progress for paginated fetches |
+| `-q, --quiet` | Suppress progress output |
 | `--json` | Force JSON output (default) |
 
 ### Date Range Queries

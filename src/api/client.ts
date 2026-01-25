@@ -69,11 +69,27 @@ async function request<T>(endpoint: string, params?: QueryParams): Promise<T> {
 /**
  * Fetch all pages of a paginated endpoint
  */
-async function fetchAll<T>(endpoint: string, params: QueryParams, all: boolean): Promise<T[]> {
+/**
+ * Options for fetchAll
+ */
+interface FetchAllOptions {
+  all: boolean;
+  showProgress?: boolean;
+}
+
+async function fetchAll<T>(
+  endpoint: string,
+  params: QueryParams,
+  options: FetchAllOptions
+): Promise<T[]> {
+  const { all, showProgress = false } = options;
   const results: T[] = [];
   let nextToken: string | undefined;
+  let pageNumber = 0;
 
   do {
+    pageNumber++;
+
     // Wrap each paginated request with retry logic
     const response = await withRetry(() =>
       request<PaginatedResponse<T>>(endpoint, {
@@ -84,7 +100,16 @@ async function fetchAll<T>(endpoint: string, params: QueryParams, all: boolean):
 
     results.push(...response.records);
     nextToken = all ? response.next_token : undefined;
+
+    // Show progress to stderr (keeps stdout clean for JSON)
+    if (showProgress && all) {
+      console.error(`Fetching page ${pageNumber}... (${results.length} records)`);
+    }
   } while (nextToken);
+
+  if (showProgress && all && pageNumber > 1) {
+    console.error(`Done! ${results.length} records fetched.`);
+  }
 
   return results;
 }
@@ -101,20 +126,36 @@ export async function getBody(): Promise<WhoopBody> {
   return request<WhoopBody>(ENDPOINTS.body);
 }
 
-export async function getSleep(params: QueryParams = {}, all = false): Promise<WhoopSleep[]> {
-  return fetchAll<WhoopSleep>(ENDPOINTS.sleep, { limit: 25, ...params }, all);
+export async function getSleep(
+  params: QueryParams = {},
+  all = false,
+  showProgress = false
+): Promise<WhoopSleep[]> {
+  return fetchAll<WhoopSleep>(ENDPOINTS.sleep, { limit: 25, ...params }, { all, showProgress });
 }
 
-export async function getRecovery(params: QueryParams = {}, all = false): Promise<WhoopRecovery[]> {
-  return fetchAll<WhoopRecovery>(ENDPOINTS.recovery, { limit: 25, ...params }, all);
+export async function getRecovery(
+  params: QueryParams = {},
+  all = false,
+  showProgress = false
+): Promise<WhoopRecovery[]> {
+  return fetchAll<WhoopRecovery>(ENDPOINTS.recovery, { limit: 25, ...params }, { all, showProgress });
 }
 
-export async function getWorkout(params: QueryParams = {}, all = false): Promise<WhoopWorkout[]> {
-  return fetchAll<WhoopWorkout>(ENDPOINTS.workout, { limit: 25, ...params }, all);
+export async function getWorkout(
+  params: QueryParams = {},
+  all = false,
+  showProgress = false
+): Promise<WhoopWorkout[]> {
+  return fetchAll<WhoopWorkout>(ENDPOINTS.workout, { limit: 25, ...params }, { all, showProgress });
 }
 
-export async function getCycle(params: QueryParams = {}, all = false): Promise<WhoopCycle[]> {
-  return fetchAll<WhoopCycle>(ENDPOINTS.cycle, { limit: 25, ...params }, all);
+export async function getCycle(
+  params: QueryParams = {},
+  all = false,
+  showProgress = false
+): Promise<WhoopCycle[]> {
+  return fetchAll<WhoopCycle>(ENDPOINTS.cycle, { limit: 25, ...params }, { all, showProgress });
 }
 
 // ============================================================================
@@ -127,10 +168,11 @@ export async function getCycle(params: QueryParams = {}, all = false): Promise<W
 export async function fetchData(
   types: DataType[],
   date: string,
-  options: { limit?: number; all?: boolean } = {}
+  options: { limit?: number; all?: boolean; showProgress?: boolean } = {}
 ): Promise<CombinedOutput> {
   const { start, end } = getDateRange(date);
   const params: QueryParams = { start, end, limit: options.limit };
+  const showProgress = options.showProgress ?? false;
 
   const output: CombinedOutput = {
     date,
@@ -146,16 +188,16 @@ export async function fetchData(
       output.body = await getBody();
     },
     sleep: async () => {
-      output.sleep = await getSleep(params, options.all);
+      output.sleep = await getSleep(params, options.all, showProgress);
     },
     recovery: async () => {
-      output.recovery = await getRecovery(params, options.all);
+      output.recovery = await getRecovery(params, options.all, showProgress);
     },
     workout: async () => {
-      output.workout = await getWorkout(params, options.all);
+      output.workout = await getWorkout(params, options.all, showProgress);
     },
     cycle: async () => {
-      output.cycle = await getCycle(params, options.all);
+      output.cycle = await getCycle(params, options.all, showProgress);
     },
   };
 
@@ -182,10 +224,11 @@ export async function fetchDataRange(
   types: DataType[],
   startDate: string,
   endDate: string,
-  options: { limit?: number; all?: boolean } = {}
+  options: { limit?: number; all?: boolean; showProgress?: boolean } = {}
 ): Promise<CombinedOutput> {
   const { start, end } = getDateRangeFromStartEnd(startDate, endDate);
   const params: QueryParams = { start, end, limit: options.limit };
+  const showProgress = options.showProgress ?? true; // Default to true for range queries
 
   const output: CombinedOutput = {
     date: `${startDate} to ${endDate}`,
@@ -201,16 +244,16 @@ export async function fetchDataRange(
       output.body = await getBody();
     },
     sleep: async () => {
-      output.sleep = await getSleep(params, options.all ?? true);
+      output.sleep = await getSleep(params, options.all ?? true, showProgress);
     },
     recovery: async () => {
-      output.recovery = await getRecovery(params, options.all ?? true);
+      output.recovery = await getRecovery(params, options.all ?? true, showProgress);
     },
     workout: async () => {
-      output.workout = await getWorkout(params, options.all ?? true);
+      output.workout = await getWorkout(params, options.all ?? true, showProgress);
     },
     cycle: async () => {
-      output.cycle = await getCycle(params, options.all ?? true);
+      output.cycle = await getCycle(params, options.all ?? true, showProgress);
     },
   };
 

@@ -90,6 +90,8 @@ function addDataCommand(name: string, description: string, dataType: DataType): 
     .option('-l, --limit <number>', 'Max results per page', '25')
     .option('-a, --all', 'Fetch all pages')
     .option('-p, --pretty', 'Human-readable output')
+    .option('--progress', 'Show progress for paginated fetches')
+    .option('-q, --quiet', 'Suppress progress output')
     .action(
       async (options: {
         date?: string;
@@ -98,6 +100,8 @@ function addDataCommand(name: string, description: string, dataType: DataType): 
         limit: string;
         all?: boolean;
         pretty?: boolean;
+        progress?: boolean;
+        quiet?: boolean;
       }) => {
         try {
           // Validate options: can't use --date with --start/--end
@@ -131,9 +135,13 @@ function addDataCommand(name: string, description: string, dataType: DataType): 
               );
             }
 
+            // Show progress by default for range queries unless --quiet is specified
+            const showProgress = options.quiet ? false : (options.progress ?? true);
+
             const result = await fetchDataRange([dataType], options.start, options.end, {
               limit: parseInt(options.limit, 10),
               all: options.all ?? true, // Default to --all for range queries
+              showProgress,
             });
 
             output(result, options.pretty ?? false);
@@ -147,9 +155,13 @@ function addDataCommand(name: string, description: string, dataType: DataType): 
             throw new WhoopError('Invalid date format. Use YYYY-MM-DD', ExitCode.GENERAL_ERROR);
           }
 
+          // Show progress if --progress is specified and not --quiet
+          const showProgressSingle = options.quiet ? false : options.progress;
+
           const result = await fetchData([dataType], date, {
             limit: parseInt(options.limit, 10),
             all: options.all,
+            showProgress: showProgressSingle,
           });
 
           output(result, options.pretty ?? false);
