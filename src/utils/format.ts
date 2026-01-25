@@ -220,7 +220,12 @@ function escapeCSV(value: unknown): string {
   if (value === null || value === undefined) {
     return '';
   }
-  const str = String(value);
+  // Handle objects by JSON stringifying them
+  if (typeof value === 'object') {
+    return escapeCSV(JSON.stringify(value));
+  }
+  // At this point value is a primitive (string, number, boolean, bigint, symbol)
+  const str = typeof value === 'string' ? value : String(value as string | number | boolean | bigint);
   // If contains comma, quote, or newline, wrap in quotes and escape internal quotes
   if (str.includes(',') || str.includes('"') || str.includes('\n')) {
     return `"${str.replace(/"/g, '""')}"`;

@@ -148,7 +148,10 @@ function loadConfig(): { clientId?: string; clientSecret?: string } {
     return {};
   }
   try {
-    return JSON.parse(readFileSync(CONFIG_FILE, 'utf8'));
+    return JSON.parse(readFileSync(CONFIG_FILE, 'utf8')) as {
+      clientId?: string;
+      clientSecret?: string;
+    };
   } catch {
     return {};
   }
@@ -169,6 +172,7 @@ program
   .description('Interactive setup wizard for first-time users')
   .action(async () => {
     try {
+      /* eslint-disable no-console */
       console.log('');
       console.log('🏃 WHOOP CLI Setup Wizard');
       console.log('━'.repeat(40));
@@ -204,8 +208,8 @@ program
 
       // Save config
       const finalConfig = {
-        clientId: clientId || existingConfig.clientId || '',
-        clientSecret: clientSecret || existingConfig.clientSecret || '',
+        clientId: clientId ?? existingConfig.clientId ?? '',
+        clientSecret: clientSecret ?? existingConfig.clientSecret ?? '',
       };
 
       saveConfig(finalConfig);
@@ -227,6 +231,7 @@ program
       console.log('');
       console.log('     whoop summary');
       console.log('');
+      /* eslint-enable no-console */
     } catch (error) {
       handleError(error);
     }
