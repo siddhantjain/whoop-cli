@@ -104,10 +104,29 @@ whoop --date 2026-01-10 --recovery --sleep
 | Option | Description |
 |--------|-------------|
 | `-d, --date <YYYY-MM-DD>` | Fetch data for specific date |
+| `-s, --start <YYYY-MM-DD>` | Start date for range query |
+| `-e, --end <YYYY-MM-DD>` | End date for range query |
 | `-p, --pretty` | Human-readable output |
 | `-l, --limit <n>` | Max records per request |
 | `-a, --all` | Fetch all pages (pagination) |
 | `--json` | Force JSON output (default) |
+
+### Date Range Queries
+
+Fetch data for a date range instead of a single day:
+
+```bash
+# Fetch 6 months of recovery data
+whoop recovery --start 2025-07-01 --end 2026-01-24
+
+# Fetch all sleep data for December
+whoop sleep --start 2025-12-01 --end 2025-12-31
+
+# Bulk export with pretty output
+whoop recovery --start 2025-01-01 --end 2025-12-31 --pretty
+```
+
+**Note:** When using `--start` and `--end`, the `--all` flag is enabled by default to fetch all paginated results.
 
 ## Output Formats
 

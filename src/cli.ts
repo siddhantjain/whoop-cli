@@ -5,7 +5,7 @@
 
 import { Command } from 'commander';
 import { login, logout, status as authStatus, refresh as authRefresh } from './auth/oauth.js';
-import { fetchData } from './api/client.js';
+import { fetchData, fetchDataRange } from './api/client.js';
 import { getWhoopDay, validateISODate } from './utils/date.js';
 import { handleError, WhoopError, ExitCode } from './utils/errors.js';
 import { formatPretty, formatSummary } from './utils/format.js';
@@ -85,27 +85,79 @@ function addDataCommand(name: string, description: string, dataType: DataType): 
     .command(name)
     .description(description)
     .option('-d, --date <date>', 'Date in ISO format (YYYY-MM-DD)')
+    .option('-s, --start <date>', 'Start date for range query (YYYY-MM-DD)')
+    .option('-e, --end <date>', 'End date for range query (YYYY-MM-DD)')
     .option('-l, --limit <number>', 'Max results per page', '25')
     .option('-a, --all', 'Fetch all pages')
     .option('-p, --pretty', 'Human-readable output')
-    .action(async (options: { date?: string; limit: string; all?: boolean; pretty?: boolean }) => {
-      try {
-        const date = options.date ?? getWhoopDay();
+    .action(
+      async (options: {
+        date?: string;
+        start?: string;
+        end?: string;
+        limit: string;
+        all?: boolean;
+        pretty?: boolean;
+      }) => {
+        try {
+          // Validate options: can't use --date with --start/--end
+          if (options.date && (options.start || options.end)) {
+            throw new WhoopError(
+              'Cannot use --date with --start/--end. Use either --date OR --start/--end.',
+              ExitCode.GENERAL_ERROR
+            );
+          }
 
-        if (options.date && !validateISODate(options.date)) {
-          throw new WhoopError('Invalid date format. Use YYYY-MM-DD', ExitCode.GENERAL_ERROR);
+          // If using date range
+          if (options.start || options.end) {
+            if (!options.start || !options.end) {
+              throw new WhoopError(
+                'Both --start and --end are required for range queries.',
+                ExitCode.GENERAL_ERROR
+              );
+            }
+
+            if (!validateISODate(options.start)) {
+              throw new WhoopError(
+                `Invalid start date format: ${options.start}. Use YYYY-MM-DD`,
+                ExitCode.GENERAL_ERROR
+              );
+            }
+
+            if (!validateISODate(options.end)) {
+              throw new WhoopError(
+                `Invalid end date format: ${options.end}. Use YYYY-MM-DD`,
+                ExitCode.GENERAL_ERROR
+              );
+            }
+
+            const result = await fetchDataRange([dataType], options.start, options.end, {
+              limit: parseInt(options.limit, 10),
+              all: options.all ?? true, // Default to --all for range queries
+            });
+
+            output(result, options.pretty ?? false);
+            return;
+          }
+
+          // Single date query (original behavior)
+          const date = options.date ?? getWhoopDay();
+
+          if (options.date && !validateISODate(options.date)) {
+            throw new WhoopError('Invalid date format. Use YYYY-MM-DD', ExitCode.GENERAL_ERROR);
+          }
+
+          const result = await fetchData([dataType], date, {
+            limit: parseInt(options.limit, 10),
+            all: options.all,
+          });
+
+          output(result, options.pretty ?? false);
+        } catch (error) {
+          handleError(error);
         }
-
-        const result = await fetchData([dataType], date, {
-          limit: parseInt(options.limit, 10),
-          all: options.all,
-        });
-
-        output(result, options.pretty ?? false);
-      } catch (error) {
-        handleError(error);
       }
-    });
+    );
 }
 
 addDataCommand('profile', 'Fetch user profile', 'profile');

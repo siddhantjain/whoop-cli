@@ -5,7 +5,7 @@
 import { getValidTokens } from '../auth/tokens.js';
 import { BASE_URL, ENDPOINTS } from './endpoints.js';
 import { WhoopError, RateLimitError, ExitCode } from '../utils/errors.js';
-import { getDateRange, nowISO } from '../utils/date.js';
+import { getDateRange, getDateRangeFromStartEnd, nowISO } from '../utils/date.js';
 import type {
   WhoopProfile,
   WhoopBody,
@@ -170,4 +170,49 @@ export async function fetchAllTypes(
   options: { limit?: number; all?: boolean } = {}
 ): Promise<CombinedOutput> {
   return fetchData(['profile', 'body', 'sleep', 'recovery', 'workout', 'cycle'], date, options);
+}
+
+/**
+ * Fetch multiple data types for a date range (start to end)
+ */
+export async function fetchDataRange(
+  types: DataType[],
+  startDate: string,
+  endDate: string,
+  options: { limit?: number; all?: boolean } = {}
+): Promise<CombinedOutput> {
+  const { start, end } = getDateRangeFromStartEnd(startDate, endDate);
+  const params: QueryParams = { start, end, limit: options.limit };
+
+  const output: CombinedOutput = {
+    date: `${startDate} to ${endDate}`,
+    fetched_at: nowISO(),
+  };
+
+  // Define fetchers for each type (profile/body don't support date ranges)
+  const fetchers: Record<DataType, () => Promise<void>> = {
+    profile: async () => {
+      output.profile = await getProfile();
+    },
+    body: async () => {
+      output.body = await getBody();
+    },
+    sleep: async () => {
+      output.sleep = await getSleep(params, options.all ?? true);
+    },
+    recovery: async () => {
+      output.recovery = await getRecovery(params, options.all ?? true);
+    },
+    workout: async () => {
+      output.workout = await getWorkout(params, options.all ?? true);
+    },
+    cycle: async () => {
+      output.cycle = await getCycle(params, options.all ?? true);
+    },
+  };
+
+  // Fetch requested types in parallel
+  await Promise.all(types.map((type) => fetchers[type]()));
+
+  return output;
 }

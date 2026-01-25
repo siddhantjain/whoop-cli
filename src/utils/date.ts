@@ -110,3 +110,38 @@ export function parseDateOrDefault(dateStr?: string): string {
 
   return dateStr;
 }
+
+/**
+ * Get start and end timestamps for a date range.
+ * Start: 4am on the start date
+ * End: 4am on the day after the end date
+ */
+export function getDateRangeFromStartEnd(
+  startStr: string,
+  endStr: string
+): { start: string; end: string } {
+  if (!validateISODate(startStr)) {
+    throw new Error(`Invalid start date format: ${startStr}. Use YYYY-MM-DD.`);
+  }
+  if (!validateISODate(endStr)) {
+    throw new Error(`Invalid end date format: ${endStr}. Use YYYY-MM-DD.`);
+  }
+
+  const startDate = new Date(startStr);
+  const endDate = new Date(endStr);
+
+  if (startDate > endDate) {
+    throw new Error(`Start date (${startStr}) must be before end date (${endStr}).`);
+  }
+
+  // Start at 4am on the start date
+  startDate.setHours(WHOOP_DAY_HOUR_CUTOFF, 0, 0, 0);
+  const start = startDate.toISOString();
+
+  // End at 4am the day after the end date
+  endDate.setHours(WHOOP_DAY_HOUR_CUTOFF, 0, 0, 0);
+  endDate.setDate(endDate.getDate() + 1);
+  const end = endDate.toISOString();
+
+  return { start, end };
+}

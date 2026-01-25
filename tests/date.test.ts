@@ -4,6 +4,7 @@ import {
   formatDate,
   validateISODate,
   getDateRange,
+  getDateRangeFromStartEnd,
   formatDuration,
   parseDateOrDefault,
 } from '../src/utils/date.js';
@@ -108,5 +109,61 @@ describe('parseDateOrDefault', () => {
 
   it('throws on invalid date', () => {
     expect(() => parseDateOrDefault('invalid')).toThrow('Invalid date format');
+  });
+});
+
+describe('getDateRangeFromStartEnd', () => {
+  it('returns correct range for multi-day query', () => {
+    const { start, end } = getDateRangeFromStartEnd('2026-01-01', '2026-01-15');
+
+    // Start should be 4am on Jan 1
+    const startDate = new Date(start);
+    expect(startDate.getDate()).toBe(1);
+    expect(startDate.getHours()).toBe(4);
+
+    // End should be 4am on Jan 16 (day after end date)
+    const endDate = new Date(end);
+    expect(endDate.getDate()).toBe(16);
+    expect(endDate.getHours()).toBe(4);
+  });
+
+  it('returns correct range for single day', () => {
+    const { start, end } = getDateRangeFromStartEnd('2026-01-10', '2026-01-10');
+
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    expect(startDate.getDate()).toBe(10);
+    expect(endDate.getDate()).toBe(11); // Next day
+  });
+
+  it('throws on invalid start date', () => {
+    expect(() => getDateRangeFromStartEnd('invalid', '2026-01-15')).toThrow(
+      'Invalid start date format'
+    );
+  });
+
+  it('throws on invalid end date', () => {
+    expect(() => getDateRangeFromStartEnd('2026-01-01', 'invalid')).toThrow(
+      'Invalid end date format'
+    );
+  });
+
+  it('throws when start is after end', () => {
+    expect(() => getDateRangeFromStartEnd('2026-01-15', '2026-01-01')).toThrow(
+      'Start date (2026-01-15) must be before end date (2026-01-01)'
+    );
+  });
+
+  it('handles month boundaries correctly', () => {
+    const { start, end } = getDateRangeFromStartEnd('2025-12-15', '2026-01-15');
+
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    expect(startDate.getMonth()).toBe(11); // December (0-indexed)
+    expect(startDate.getFullYear()).toBe(2025);
+    expect(endDate.getMonth()).toBe(0); // January
+    expect(endDate.getFullYear()).toBe(2026);
   });
 });
