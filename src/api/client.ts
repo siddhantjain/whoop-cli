@@ -4,7 +4,7 @@
 
 import { getValidTokens } from '../auth/tokens.js';
 import { BASE_URL, ENDPOINTS } from './endpoints.js';
-import { WhoopError, RateLimitError, ExitCode } from '../utils/errors.js';
+import { WhoopError, RateLimitError, ExitCode, withRetry } from '../utils/errors.js';
 import { getDateRange, getDateRangeFromStartEnd, nowISO } from '../utils/date.js';
 import type {
   WhoopProfile,
@@ -74,10 +74,13 @@ async function fetchAll<T>(endpoint: string, params: QueryParams, all: boolean):
   let nextToken: string | undefined;
 
   do {
-    const response = await request<PaginatedResponse<T>>(endpoint, {
-      ...params,
-      nextToken,
-    });
+    // Wrap each paginated request with retry logic
+    const response = await withRetry(() =>
+      request<PaginatedResponse<T>>(endpoint, {
+        ...params,
+        nextToken,
+      })
+    );
 
     results.push(...response.records);
     nextToken = all ? response.next_token : undefined;
