@@ -254,6 +254,156 @@ program
   });
 
 // ============================================================================
+// Trends Command
+// ============================================================================
+
+program
+  .command('trends')
+  .description('Analyze trends over a time period')
+  .option('-d, --days <number>', 'Number of days to analyze', '30')
+  .option('-f, --format <format>', 'Output format: pretty or json', 'pretty')
+  .action(async (options: { days: string; format?: string }) => {
+    try {
+      const days = parseInt(options.days, 10);
+      if (isNaN(days) || days < 1) {
+        throw new WhoopError('Days must be a positive number', ExitCode.GENERAL_ERROR);
+      }
+
+      // Calculate date range
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+
+      const startStr = startDate.toISOString().split('T')[0] as string;
+      const endStr = endDate.toISOString().split('T')[0] as string;
+
+      console.error(`Analyzing ${days} days of data (${startStr} to ${endStr})...`);
+
+      const result = await fetchDataRange(['recovery', 'sleep', 'cycle'], startStr, endStr, {
+        all: true,
+        showProgress: false,
+      });
+
+      // Calculate statistics
+      const recoveryScores =
+        result.recovery?.map((r) => r.score?.recovery_score).filter((s) => s !== undefined) ?? [];
+      const hrvValues =
+        result.recovery?.map((r) => r.score?.hrv_rmssd_milli).filter((v) => v !== undefined) ?? [];
+      const sleepPerf =
+        result.sleep
+          ?.filter((s) => !s.nap)
+          .map((s) => s.score?.sleep_performance_percentage)
+          .filter((p) => p !== undefined) ?? [];
+      const strainScores =
+        result.cycle?.map((c) => c.score?.strain).filter((s) => s !== undefined) ?? [];
+
+      const stats = {
+        period: { start: startStr, end: endStr, days },
+        recovery: calculateStats(recoveryScores),
+        hrv: calculateStats(hrvValues),
+        sleepPerformance: calculateStats(sleepPerf),
+        strain: calculateStats(strainScores),
+        counts: {
+          recovery: result.recovery?.length ?? 0,
+          sleep: result.sleep?.length ?? 0,
+          cycle: result.cycle?.length ?? 0,
+        },
+      };
+
+      if (options.format === 'json') {
+        // eslint-disable-next-line no-console
+        console.log(JSON.stringify(stats, null, 2));
+      } else {
+        // Pretty print
+        const lines: string[] = [];
+        lines.push(`📊 WHOOP Trends (Last ${days} Days)`);
+        lines.push('━'.repeat(45));
+
+        if (stats.recovery.count > 0) {
+          lines.push(
+            `🔋 Recovery:  Mean ${stats.recovery.mean.toFixed(0)}% | ` +
+              `Median ${stats.recovery.median.toFixed(0)}% | ` +
+              `Range ${stats.recovery.min.toFixed(0)}-${stats.recovery.max.toFixed(0)}%`
+          );
+        }
+
+        if (stats.hrv.count > 0) {
+          lines.push(
+            `💓 HRV:       Mean ${stats.hrv.mean.toFixed(1)}ms | ` +
+              `Median ${stats.hrv.median.toFixed(1)}ms | ` +
+              `Range ${stats.hrv.min.toFixed(0)}-${stats.hrv.max.toFixed(0)}ms`
+          );
+        }
+
+        if (stats.sleepPerformance.count > 0) {
+          lines.push(
+            `😴 Sleep:     Mean ${stats.sleepPerformance.mean.toFixed(0)}% | ` +
+              `Median ${stats.sleepPerformance.median.toFixed(0)}%`
+          );
+        }
+
+        if (stats.strain.count > 0) {
+          lines.push(
+            `🔥 Strain:    Mean ${stats.strain.mean.toFixed(1)} | ` +
+              `Median ${stats.strain.median.toFixed(1)} | ` +
+              `Max ${stats.strain.max.toFixed(1)}`
+          );
+        }
+
+        lines.push('');
+        lines.push(
+          `📈 Data points: ${stats.counts.recovery} recovery, ` +
+            `${stats.counts.sleep} sleep, ${stats.counts.cycle} strain`
+        );
+
+        // eslint-disable-next-line no-console
+        console.log(lines.join('\n'));
+      }
+    } catch (error) {
+      handleError(error);
+    }
+  });
+
+/**
+ * Calculate basic statistics for an array of numbers
+ */
+function calculateStats(values: number[]): {
+  count: number;
+  mean: number;
+  median: number;
+  min: number;
+  max: number;
+  stdDev: number;
+} {
+  if (values.length === 0) {
+    return { count: 0, mean: 0, median: 0, min: 0, max: 0, stdDev: 0 };
+  }
+
+  const sorted = [...values].sort((a, b) => a - b);
+  const sum = values.reduce((a, b) => a + b, 0);
+  const mean = sum / values.length;
+
+  // Median
+  const mid = Math.floor(sorted.length / 2);
+  const median =
+    sorted.length % 2 !== 0 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
+
+  // Standard deviation
+  const squareDiffs = values.map((v) => Math.pow(v - mean, 2));
+  const avgSquareDiff = squareDiffs.reduce((a, b) => a + b, 0) / values.length;
+  const stdDev = Math.sqrt(avgSquareDiff);
+
+  return {
+    count: values.length,
+    mean,
+    median,
+    min: sorted[0]!,
+    max: sorted[sorted.length - 1]!,
+    stdDev,
+  };
+}
+
+// ============================================================================
 // Export Command
 // ============================================================================
 

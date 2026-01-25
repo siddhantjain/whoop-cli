@@ -91,6 +91,7 @@ whoop --date 2026-01-10 --recovery --sleep
 | `whoop body` | Body measurements (height, weight, max HR) |
 | `whoop get <type> <id>` | Fetch specific record by ID |
 | `whoop export` | Bulk export data for a date range |
+| `whoop trends` | Analyze trends over a time period |
 
 ### Auth Commands
 
@@ -147,6 +148,33 @@ whoop export --start 2025-07-01 --end 2026-01-24 -t sleep,recovery -f csv
 
 # Export with quiet mode (no progress)
 whoop export --start 2025-01-01 --end 2025-06-30 -o data.json -q
+```
+
+### Trend Analysis
+
+Analyze your health trends over time:
+
+```bash
+# Last 30 days (default)
+whoop trends
+
+# Last 90 days
+whoop trends --days 90
+
+# Output as JSON for further processing
+whoop trends --days 60 --format json
+```
+
+Output example:
+```
+📊 WHOOP Trends (Last 30 Days)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔋 Recovery:  Mean 68% | Median 72% | Range 35-92%
+💓 HRV:       Mean 62.4ms | Median 64.0ms | Range 42-89ms
+😴 Sleep:     Mean 84% | Median 85%
+🔥 Strain:    Mean 11.2 | Median 10.8 | Max 18.4
+
+📈 Data points: 30 recovery, 32 sleep, 30 strain
 ```
 
 ## Output Formats
