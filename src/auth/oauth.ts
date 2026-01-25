@@ -77,6 +77,30 @@ async function exchangeCode(
 
   if (!response.ok) {
     const error = await response.text();
+
+    // Provide helpful error messages for common issues
+    if (error.includes('redirect_uri') || error.includes('redirect')) {
+      throw new AuthError(
+        `Redirect URI mismatch. Make sure your WHOOP developer app has:\n` +
+          `  Redirect URI: http://localhost:3000/callback\n\n` +
+          `To fix: Go to https://developer.whoop.com → Your App → Edit → Update Redirect URI`
+      );
+    }
+
+    if (error.includes('invalid_client') || error.includes('client_id')) {
+      throw new AuthError(
+        `Invalid client credentials. Check your WHOOP_CLIENT_ID and WHOOP_CLIENT_SECRET.\n\n` +
+          `To get credentials: https://developer.whoop.com → Create/Edit App`
+      );
+    }
+
+    if (error.includes('invalid_grant') || error.includes('expired')) {
+      throw new AuthError(
+        `Authorization code expired or already used. Please try again:\n` +
+          `  whoop auth login`
+      );
+    }
+
     throw new AuthError(`Failed to exchange code: ${error}`);
   }
 
@@ -106,8 +130,16 @@ export async function login(): Promise<void> {
 
   if (!clientId || !clientSecret) {
     throw new AuthError(
-      'WHOOP_CLIENT_ID and WHOOP_CLIENT_SECRET must be set.\n' +
-        'Get these from: https://developer.whoop.com'
+      'WHOOP_CLIENT_ID and WHOOP_CLIENT_SECRET environment variables are required.\n\n' +
+        'Quick setup:\n' +
+        '  1. Run: whoop init\n' +
+        '  2. Follow the prompts to configure credentials\n\n' +
+        'Or manually:\n' +
+        '  1. Go to https://developer.whoop.com\n' +
+        '  2. Create an app with Redirect URI: http://localhost:3000/callback\n' +
+        '  3. Set environment variables:\n' +
+        '     export WHOOP_CLIENT_ID="your-client-id"\n' +
+        '     export WHOOP_CLIENT_SECRET="your-client-secret"'
     );
   }
 
