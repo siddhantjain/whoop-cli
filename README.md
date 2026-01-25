@@ -89,6 +89,7 @@ whoop --date 2026-01-10 --recovery --sleep
 | `whoop cycle` | Daily physiological cycles |
 | `whoop profile` | User profile information |
 | `whoop body` | Body measurements (height, weight, max HR) |
+| `whoop get <type> <id>` | Fetch specific record by ID |
 
 ### Auth Commands
 

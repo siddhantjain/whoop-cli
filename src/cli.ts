@@ -6,7 +6,14 @@
 import { writeFileSync } from 'node:fs';
 import { Command } from 'commander';
 import { login, logout, status as authStatus, refresh as authRefresh } from './auth/oauth.js';
-import { fetchData, fetchDataRange } from './api/client.js';
+import {
+  fetchData,
+  fetchDataRange,
+  getSleepById,
+  getWorkoutById,
+  getCycleById,
+  getRecoveryByCycleId,
+} from './api/client.js';
 import { getWhoopDay, validateISODate } from './utils/date.js';
 import { handleError, WhoopError, ExitCode } from './utils/errors.js';
 import { formatPretty, formatSummary, formatCSV } from './utils/format.js';
@@ -245,6 +252,71 @@ program
       handleError(error);
     }
   });
+
+// ============================================================================
+// Get by ID Command
+// ============================================================================
+
+program
+  .command('get')
+  .description('Fetch a specific record by ID')
+  .argument('<type>', 'Record type: sleep, workout, cycle, or recovery')
+  .argument('<id>', 'Record ID (numeric)')
+  .option('-p, --pretty', 'Human-readable output')
+  .option('-f, --format <format>', 'Output format: json or csv', 'json')
+  .option('-o, --output <file>', 'Write output to file')
+  .action(
+    async (
+      type: string,
+      id: string,
+      options: { pretty?: boolean; format?: string; output?: string }
+    ) => {
+      try {
+        const recordId = parseInt(id, 10);
+        if (isNaN(recordId)) {
+          throw new WhoopError(`Invalid ID: ${id}. Must be a number.`, ExitCode.GENERAL_ERROR);
+        }
+
+        let result: unknown;
+
+        switch (type.toLowerCase()) {
+          case 'sleep':
+            result = await getSleepById(recordId);
+            break;
+          case 'workout':
+            result = await getWorkoutById(recordId);
+            break;
+          case 'cycle':
+            result = await getCycleById(recordId);
+            break;
+          case 'recovery':
+            // Recovery is fetched by cycle ID
+            result = await getRecoveryByCycleId(recordId);
+            break;
+          default:
+            throw new WhoopError(
+              `Unknown record type: ${type}. Use: sleep, workout, cycle, or recovery`,
+              ExitCode.GENERAL_ERROR
+            );
+        }
+
+        // Format output
+        const content = options.pretty
+          ? JSON.stringify(result, null, 2)
+          : JSON.stringify(result, null, 2);
+
+        if (options.output) {
+          writeFileSync(options.output, content + '\n', 'utf-8');
+          console.error(`Data written to ${options.output}`);
+        } else {
+          // eslint-disable-next-line no-console
+          console.log(content);
+        }
+      } catch (error) {
+        handleError(error);
+      }
+    }
+  );
 
 // ============================================================================
 // Wake Detection Command

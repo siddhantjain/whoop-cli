@@ -159,6 +159,26 @@ export async function getCycle(
 }
 
 // ============================================================================
+// Individual Record Lookups by ID
+// ============================================================================
+
+export async function getSleepById(id: number): Promise<WhoopSleep> {
+  return withRetry(() => request<WhoopSleep>(`${ENDPOINTS.sleep}/${id}`));
+}
+
+export async function getWorkoutById(id: number): Promise<WhoopWorkout> {
+  return withRetry(() => request<WhoopWorkout>(`${ENDPOINTS.workout}/${id}`));
+}
+
+export async function getCycleById(id: number): Promise<WhoopCycle> {
+  return withRetry(() => request<WhoopCycle>(`${ENDPOINTS.cycle}/${id}`));
+}
+
+export async function getRecoveryByCycleId(cycleId: number): Promise<WhoopRecovery> {
+  return withRetry(() => request<WhoopRecovery>(`${ENDPOINTS.recovery}/cycle/${cycleId}`));
+}
+
+// ============================================================================
 // Combined Data Fetcher
 // ============================================================================
 
