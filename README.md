@@ -90,6 +90,7 @@ whoop --date 2026-01-10 --recovery --sleep
 | `whoop profile` | User profile information |
 | `whoop body` | Body measurements (height, weight, max HR) |
 | `whoop get <type> <id>` | Fetch specific record by ID |
+| `whoop export` | Bulk export data for a date range |
 
 ### Auth Commands
 
@@ -132,6 +133,21 @@ whoop recovery --start 2025-01-01 --end 2025-12-31 --pretty
 ```
 
 **Note:** When using `--start` and `--end`, the `--all` flag is enabled by default to fetch all paginated results.
+
+### Bulk Export
+
+Export all data for a date range with the `export` command:
+
+```bash
+# Export all data types to JSON
+whoop export --start 2025-01-01 --end 2025-12-31 -o whoop_2025.json
+
+# Export only sleep and recovery as CSV
+whoop export --start 2025-07-01 --end 2026-01-24 -t sleep,recovery -f csv
+
+# Export with quiet mode (no progress)
+whoop export --start 2025-01-01 --end 2025-06-30 -o data.json -q
+```
 
 ## Output Formats
 

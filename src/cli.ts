@@ -254,6 +254,114 @@ program
   });
 
 // ============================================================================
+// Export Command
+// ============================================================================
+
+program
+  .command('export')
+  .description('Export all data for a date range')
+  .requiredOption('-s, --start <date>', 'Start date (YYYY-MM-DD)')
+  .requiredOption('-e, --end <date>', 'End date (YYYY-MM-DD)')
+  .option('-f, --format <format>', 'Output format: json or csv', 'json')
+  .option('-o, --output <file>', 'Write output to file')
+  .option('-q, --quiet', 'Suppress progress output')
+  .option(
+    '-t, --types <types>',
+    'Data types to export (comma-separated: recovery,sleep,workout,cycle)',
+    'recovery,sleep,workout,cycle'
+  )
+  .action(
+    async (options: {
+      start: string;
+      end: string;
+      format?: string;
+      output?: string;
+      quiet?: boolean;
+      types: string;
+    }) => {
+      try {
+        if (!validateISODate(options.start)) {
+          throw new WhoopError(
+            `Invalid start date: ${options.start}. Use YYYY-MM-DD`,
+            ExitCode.GENERAL_ERROR
+          );
+        }
+
+        if (!validateISODate(options.end)) {
+          throw new WhoopError(
+            `Invalid end date: ${options.end}. Use YYYY-MM-DD`,
+            ExitCode.GENERAL_ERROR
+          );
+        }
+
+        // Parse data types
+        const validTypes = ['recovery', 'sleep', 'workout', 'cycle'] as const;
+        const requestedTypes = options.types.split(',').map((t) => t.trim().toLowerCase());
+
+        for (const t of requestedTypes) {
+          if (!validTypes.includes(t as (typeof validTypes)[number])) {
+            throw new WhoopError(
+              `Invalid data type: ${t}. Valid types: ${validTypes.join(', ')}`,
+              ExitCode.GENERAL_ERROR
+            );
+          }
+        }
+
+        const types = requestedTypes as DataType[];
+        const showProgress = !options.quiet;
+
+        if (showProgress) {
+          console.error(`Exporting ${types.join(', ')} from ${options.start} to ${options.end}...`);
+        }
+
+        const result = await fetchDataRange(types, options.start, options.end, {
+          all: true,
+          showProgress,
+        });
+
+        // Format output
+        const format: OutputFormat = (options.format as OutputFormat) ?? 'json';
+        let content: string;
+
+        if (format === 'csv') {
+          // For CSV, we need to output each type separately
+          const csvParts: string[] = [];
+          for (const type of types) {
+            if (result[type] && Array.isArray(result[type]) && result[type].length > 0) {
+              csvParts.push(`# ${type.toUpperCase()}`);
+              csvParts.push(formatCSV(result, type));
+              csvParts.push('');
+            }
+          }
+          content = csvParts.join('\n');
+        } else {
+          content = JSON.stringify(result, null, 2);
+        }
+
+        if (options.output) {
+          writeFileSync(options.output, content + '\n', 'utf-8');
+          console.error(`Data exported to ${options.output}`);
+
+          // Show summary
+          let totalRecords = 0;
+          for (const type of types) {
+            const records = result[type];
+            if (Array.isArray(records)) {
+              totalRecords += records.length;
+            }
+          }
+          console.error(`Total records: ${totalRecords}`);
+        } else {
+          // eslint-disable-next-line no-console
+          console.log(content);
+        }
+      } catch (error) {
+        handleError(error);
+      }
+    }
+  );
+
+// ============================================================================
 // Get by ID Command
 // ============================================================================
 
