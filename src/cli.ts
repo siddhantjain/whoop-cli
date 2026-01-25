@@ -3,6 +3,7 @@
  * WHOOP CLI - Command Line Interface
  */
 
+import { writeFileSync } from 'node:fs';
 import { Command } from 'commander';
 import { login, logout, status as authStatus, refresh as authRefresh } from './auth/oauth.js';
 import { fetchData, fetchDataRange } from './api/client.js';
@@ -21,12 +22,19 @@ import type { DataType, CombinedOutput } from './types/whoop.js';
 const program = new Command();
 
 /**
- * Output data in JSON or pretty format
+ * Output data in JSON or pretty format, optionally to a file
  */
-function output(data: CombinedOutput, pretty: boolean): void {
-  // Using console.log for stdout (data output)
-  // eslint-disable-next-line no-console
-  console.log(pretty ? formatPretty(data) : JSON.stringify(data, null, 2));
+function output(data: CombinedOutput, pretty: boolean, outputPath?: string): void {
+  const content = pretty ? formatPretty(data) : JSON.stringify(data, null, 2);
+
+  if (outputPath) {
+    writeFileSync(outputPath, content + '\n', 'utf-8');
+    console.error(`Data written to ${outputPath}`);
+  } else {
+    // Using console.log for stdout (data output)
+    // eslint-disable-next-line no-console
+    console.log(content);
+  }
 }
 
 // ============================================================================
@@ -92,6 +100,7 @@ function addDataCommand(name: string, description: string, dataType: DataType): 
     .option('-p, --pretty', 'Human-readable output')
     .option('--progress', 'Show progress for paginated fetches')
     .option('-q, --quiet', 'Suppress progress output')
+    .option('-o, --output <file>', 'Write output to file instead of stdout')
     .action(
       async (options: {
         date?: string;
@@ -102,6 +111,7 @@ function addDataCommand(name: string, description: string, dataType: DataType): 
         pretty?: boolean;
         progress?: boolean;
         quiet?: boolean;
+        output?: string;
       }) => {
         try {
           // Validate options: can't use --date with --start/--end
@@ -144,7 +154,7 @@ function addDataCommand(name: string, description: string, dataType: DataType): 
               showProgress,
             });
 
-            output(result, options.pretty ?? false);
+            output(result, options.pretty ?? false, options.output);
             return;
           }
 
@@ -164,7 +174,7 @@ function addDataCommand(name: string, description: string, dataType: DataType): 
             showProgress: showProgressSingle,
           });
 
-          output(result, options.pretty ?? false);
+          output(result, options.pretty ?? false, options.output);
         } catch (error) {
           handleError(error);
         }

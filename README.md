@@ -111,6 +111,7 @@ whoop --date 2026-01-10 --recovery --sleep
 | `-a, --all` | Fetch all pages (pagination) |
 | `--progress` | Show progress for paginated fetches |
 | `-q, --quiet` | Suppress progress output |
+| `-o, --output <file>` | Write output to file instead of stdout |
 | `--json` | Force JSON output (default) |
 
 ### Date Range Queries
