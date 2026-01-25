@@ -96,8 +96,7 @@ async function exchangeCode(
 
     if (error.includes('invalid_grant') || error.includes('expired')) {
       throw new AuthError(
-        `Authorization code expired or already used. Please try again:\n` +
-          `  whoop auth login`
+        `Authorization code expired or already used. Please try again:\n` + `  whoop auth login`
       );
     }
 
@@ -213,7 +212,7 @@ export async function loginHeadless(): Promise<void> {
   console.error('');
   console.error('2. Log in and authorize the app');
   console.error('');
-  console.error('3. After authorization, you\'ll be redirected to a URL like:');
+  console.error("3. After authorization, you'll be redirected to a URL like:");
   console.error('   http://localhost:3000/callback?code=xxx&state=xxx');
   console.error('');
   console.error('4. Copy and paste that FULL URL below:');

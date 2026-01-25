@@ -121,9 +121,7 @@ function trackRefresh(): void {
       `⚠️  Warning: ${refreshCount} token refreshes in the last hour. ` +
         `Heavy usage may exhaust your refresh token.`
     );
-    console.error(
-      `   Tip: Use --start/--end for bulk data instead of day-by-day fetching.`
-    );
+    console.error(`   Tip: Use --start/--end for bulk data instead of day-by-day fetching.`);
   }
 }
 

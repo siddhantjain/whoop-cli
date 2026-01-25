@@ -139,7 +139,11 @@ export async function getRecovery(
   all = false,
   showProgress = false
 ): Promise<WhoopRecovery[]> {
-  return fetchAll<WhoopRecovery>(ENDPOINTS.recovery, { limit: 25, ...params }, { all, showProgress });
+  return fetchAll<WhoopRecovery>(
+    ENDPOINTS.recovery,
+    { limit: 25, ...params },
+    { all, showProgress }
+  );
 }
 
 export async function getWorkout(

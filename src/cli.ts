@@ -8,7 +8,13 @@ import { createInterface } from 'node:readline';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { Command } from 'commander';
-import { login, loginHeadless, logout, status as authStatus, refresh as authRefresh } from './auth/oauth.js';
+import {
+  login,
+  loginHeadless,
+  logout,
+  status as authStatus,
+  refresh as authRefresh,
+} from './auth/oauth.js';
 import {
   fetchData,
   fetchDataRange,
@@ -315,7 +321,7 @@ function addDataCommand(name: string, description: string, dataType: DataType): 
             // Determine format: --pretty flag overrides --format for backwards compatibility
             const format: OutputFormat = options.pretty
               ? 'pretty'
-              : (options.format as OutputFormat) ?? 'json';
+              : ((options.format as OutputFormat) ?? 'json');
 
             output(result, format, options.output, dataType);
             return;
@@ -340,7 +346,7 @@ function addDataCommand(name: string, description: string, dataType: DataType): 
           // Determine format: --pretty flag overrides --format for backwards compatibility
           const formatSingle: OutputFormat = options.pretty
             ? 'pretty'
-            : (options.format as OutputFormat) ?? 'json';
+            : ((options.format as OutputFormat) ?? 'json');
 
           output(result, formatSingle, options.output, dataType);
         } catch (error) {
@@ -514,8 +520,7 @@ function calculateStats(values: number[]): {
 
   // Median
   const mid = Math.floor(sorted.length / 2);
-  const median =
-    sorted.length % 2 !== 0 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
+  const median = sorted.length % 2 !== 0 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
 
   // Standard deviation
   const squareDiffs = values.map((v) => Math.pow(v - mean, 2));
