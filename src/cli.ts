@@ -9,7 +9,7 @@ import { login, logout, status as authStatus, refresh as authRefresh } from './a
 import { fetchData, fetchDataRange } from './api/client.js';
 import { getWhoopDay, validateISODate } from './utils/date.js';
 import { handleError, WhoopError, ExitCode } from './utils/errors.js';
-import { formatPretty, formatSummary } from './utils/format.js';
+import { formatPretty, formatSummary, formatCSV } from './utils/format.js';
 import {
   checkWake,
   formatWakeResult,
@@ -21,11 +21,31 @@ import type { DataType, CombinedOutput } from './types/whoop.js';
 
 const program = new Command();
 
+type OutputFormat = 'json' | 'pretty' | 'csv';
+
 /**
- * Output data in JSON or pretty format, optionally to a file
+ * Output data in specified format, optionally to a file
  */
-function output(data: CombinedOutput, pretty: boolean, outputPath?: string): void {
-  const content = pretty ? formatPretty(data) : JSON.stringify(data, null, 2);
+function output(
+  data: CombinedOutput,
+  format: OutputFormat,
+  outputPath?: string,
+  dataType?: string
+): void {
+  let content: string;
+
+  switch (format) {
+    case 'pretty':
+      content = formatPretty(data);
+      break;
+    case 'csv':
+      content = formatCSV(data, dataType);
+      break;
+    case 'json':
+    default:
+      content = JSON.stringify(data, null, 2);
+      break;
+  }
 
   if (outputPath) {
     writeFileSync(outputPath, content + '\n', 'utf-8');
@@ -101,6 +121,7 @@ function addDataCommand(name: string, description: string, dataType: DataType): 
     .option('--progress', 'Show progress for paginated fetches')
     .option('-q, --quiet', 'Suppress progress output')
     .option('-o, --output <file>', 'Write output to file instead of stdout')
+    .option('-f, --format <format>', 'Output format: json, csv, or pretty', 'json')
     .action(
       async (options: {
         date?: string;
@@ -112,6 +133,7 @@ function addDataCommand(name: string, description: string, dataType: DataType): 
         progress?: boolean;
         quiet?: boolean;
         output?: string;
+        format?: string;
       }) => {
         try {
           // Validate options: can't use --date with --start/--end
@@ -154,7 +176,12 @@ function addDataCommand(name: string, description: string, dataType: DataType): 
               showProgress,
             });
 
-            output(result, options.pretty ?? false, options.output);
+            // Determine format: --pretty flag overrides --format for backwards compatibility
+            const format: OutputFormat = options.pretty
+              ? 'pretty'
+              : (options.format as OutputFormat) ?? 'json';
+
+            output(result, format, options.output, dataType);
             return;
           }
 
@@ -174,7 +201,12 @@ function addDataCommand(name: string, description: string, dataType: DataType): 
             showProgress: showProgressSingle,
           });
 
-          output(result, options.pretty ?? false, options.output);
+          // Determine format: --pretty flag overrides --format for backwards compatibility
+          const formatSingle: OutputFormat = options.pretty
+            ? 'pretty'
+            : (options.format as OutputFormat) ?? 'json';
+
+          output(result, formatSingle, options.output, dataType);
         } catch (error) {
           handleError(error);
         }
@@ -376,7 +408,8 @@ program
           all: options.all,
         });
 
-        output(result, options.pretty ?? false);
+        const outputFormat: OutputFormat = options.pretty ? 'pretty' : 'json';
+        output(result, outputFormat);
       } catch (error) {
         handleError(error);
       }

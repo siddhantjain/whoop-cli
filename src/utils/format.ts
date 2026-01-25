@@ -208,3 +208,194 @@ export function formatSummary(data: CombinedOutput): string {
 
   return parts.join(' | ');
 }
+
+// ============================================================================
+// CSV Formatting
+// ============================================================================
+
+/**
+ * Escape a value for CSV (handle commas, quotes, newlines)
+ */
+function escapeCSV(value: unknown): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  const str = String(value);
+  // If contains comma, quote, or newline, wrap in quotes and escape internal quotes
+  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+/**
+ * Format recovery data as CSV
+ */
+export function formatRecoveryCSV(data: CombinedOutput): string {
+  const headers = [
+    'date',
+    'recovery_score',
+    'hrv_rmssd_milli',
+    'resting_heart_rate',
+    'spo2_percentage',
+    'skin_temp_celsius',
+    'cycle_id',
+    'created_at',
+  ];
+
+  const lines: string[] = [headers.join(',')];
+
+  for (const r of data.recovery ?? []) {
+    const score = r.score;
+    const row = [
+      escapeCSV(data.date),
+      escapeCSV(score?.recovery_score),
+      escapeCSV(score?.hrv_rmssd_milli),
+      escapeCSV(score?.resting_heart_rate),
+      escapeCSV(score?.spo2_percentage),
+      escapeCSV(score?.skin_temp_celsius),
+      escapeCSV(r.cycle_id),
+      escapeCSV(r.created_at),
+    ];
+    lines.push(row.join(','));
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Format sleep data as CSV
+ */
+export function formatSleepCSV(data: CombinedOutput): string {
+  const headers = [
+    'date',
+    'start',
+    'end',
+    'nap',
+    'sleep_performance_percentage',
+    'sleep_efficiency_percentage',
+    'total_sleep_milli',
+    'light_sleep_milli',
+    'deep_sleep_milli',
+    'rem_sleep_milli',
+    'awake_milli',
+    'respiratory_rate',
+    'sleep_id',
+  ];
+
+  const lines: string[] = [headers.join(',')];
+
+  for (const s of data.sleep ?? []) {
+    const score = s.score;
+    const stages = score?.stage_summary;
+    const totalSleep = stages
+      ? stages.total_light_sleep_time_milli +
+        stages.total_slow_wave_sleep_time_milli +
+        stages.total_rem_sleep_time_milli
+      : null;
+
+    const row = [
+      escapeCSV(data.date),
+      escapeCSV(s.start),
+      escapeCSV(s.end),
+      escapeCSV(s.nap),
+      escapeCSV(score?.sleep_performance_percentage),
+      escapeCSV(score?.sleep_efficiency_percentage),
+      escapeCSV(totalSleep),
+      escapeCSV(stages?.total_light_sleep_time_milli),
+      escapeCSV(stages?.total_slow_wave_sleep_time_milli),
+      escapeCSV(stages?.total_rem_sleep_time_milli),
+      escapeCSV(stages?.total_awake_time_milli),
+      escapeCSV(score?.respiratory_rate),
+      escapeCSV(s.id),
+    ];
+    lines.push(row.join(','));
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Format workout data as CSV
+ */
+export function formatWorkoutCSV(data: CombinedOutput): string {
+  const headers = [
+    'date',
+    'start',
+    'end',
+    'sport_id',
+    'strain',
+    'average_heart_rate',
+    'max_heart_rate',
+    'kilojoule',
+    'distance_meter',
+    'workout_id',
+  ];
+
+  const lines: string[] = [headers.join(',')];
+
+  for (const w of data.workout ?? []) {
+    const score = w.score;
+    const row = [
+      escapeCSV(data.date),
+      escapeCSV(w.start),
+      escapeCSV(w.end),
+      escapeCSV(w.sport_id),
+      escapeCSV(score?.strain),
+      escapeCSV(score?.average_heart_rate),
+      escapeCSV(score?.max_heart_rate),
+      escapeCSV(score?.kilojoule),
+      escapeCSV(score?.distance_meter),
+      escapeCSV(w.id),
+    ];
+    lines.push(row.join(','));
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Format cycle data as CSV
+ */
+export function formatCycleCSV(data: CombinedOutput): string {
+  const headers = ['date', 'start', 'end', 'strain', 'kilojoule', 'average_heart_rate', 'cycle_id'];
+
+  const lines: string[] = [headers.join(',')];
+
+  for (const c of data.cycle ?? []) {
+    const score = c.score;
+    const row = [
+      escapeCSV(data.date),
+      escapeCSV(c.start),
+      escapeCSV(c.end),
+      escapeCSV(score?.strain),
+      escapeCSV(score?.kilojoule),
+      escapeCSV(score?.average_heart_rate),
+      escapeCSV(c.id),
+    ];
+    lines.push(row.join(','));
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Format data as CSV based on available data type
+ */
+export function formatCSV(data: CombinedOutput, dataType?: string): string {
+  // Determine the primary data type
+  if (dataType === 'recovery' || (data.recovery && data.recovery.length > 0 && !dataType)) {
+    return formatRecoveryCSV(data);
+  }
+  if (dataType === 'sleep' || (data.sleep && data.sleep.length > 0 && !dataType)) {
+    return formatSleepCSV(data);
+  }
+  if (dataType === 'workout' || (data.workout && data.workout.length > 0 && !dataType)) {
+    return formatWorkoutCSV(data);
+  }
+  if (dataType === 'cycle' || (data.cycle && data.cycle.length > 0 && !dataType)) {
+    return formatCycleCSV(data);
+  }
+
+  return 'No data available for CSV export';
+}

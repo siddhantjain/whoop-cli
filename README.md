@@ -112,6 +112,7 @@ whoop --date 2026-01-10 --recovery --sleep
 | `--progress` | Show progress for paginated fetches |
 | `-q, --quiet` | Suppress progress output |
 | `-o, --output <file>` | Write output to file instead of stdout |
+| `-f, --format <format>` | Output format: json, csv, or pretty |
 | `--json` | Force JSON output (default) |
 
 ### Date Range Queries

@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { formatPretty, formatSummary } from '../src/utils/format.js';
+import {
+  formatPretty,
+  formatSummary,
+  formatCSV,
+  formatRecoveryCSV,
+  formatSleepCSV,
+} from '../src/utils/format.js';
 import type { CombinedOutput, WhoopRecovery, WhoopSleep, WhoopCycle } from '../src/types/whoop.js';
 
 const mockRecovery: WhoopRecovery = {
@@ -195,5 +201,103 @@ describe('formatPretty', () => {
 
     const result = formatPretty(data);
     expect(result).toContain('Sleep: No data');
+  });
+});
+
+describe('formatRecoveryCSV', () => {
+  it('formats recovery data as CSV with headers', () => {
+    const data: CombinedOutput = {
+      date: '2026-01-12',
+      fetched_at: '2026-01-12T15:00:00Z',
+      recovery: [mockRecovery],
+    };
+
+    const result = formatRecoveryCSV(data);
+    const lines = result.split('\n');
+
+    // Check headers
+    expect(lines[0]).toBe(
+      'date,recovery_score,hrv_rmssd_milli,resting_heart_rate,spo2_percentage,skin_temp_celsius,cycle_id,created_at'
+    );
+
+    // Check data row
+    expect(lines[1]).toContain('2026-01-12');
+    expect(lines[1]).toContain('72');
+    expect(lines[1]).toContain('45.2');
+    expect(lines[1]).toContain('52');
+    expect(lines[1]).toContain('96.5');
+  });
+
+  it('handles empty recovery array', () => {
+    const data: CombinedOutput = {
+      date: '2026-01-12',
+      fetched_at: '2026-01-12T15:00:00Z',
+      recovery: [],
+    };
+
+    const result = formatRecoveryCSV(data);
+    const lines = result.split('\n');
+
+    // Should only have headers
+    expect(lines.length).toBe(1);
+  });
+});
+
+describe('formatSleepCSV', () => {
+  it('formats sleep data as CSV with headers', () => {
+    const data: CombinedOutput = {
+      date: '2026-01-12',
+      fetched_at: '2026-01-12T15:00:00Z',
+      sleep: [mockSleep],
+    };
+
+    const result = formatSleepCSV(data);
+    const lines = result.split('\n');
+
+    // Check headers
+    expect(lines[0]).toContain('sleep_performance_percentage');
+    expect(lines[0]).toContain('deep_sleep_milli');
+
+    // Check data row
+    expect(lines[1]).toContain('2026-01-12');
+    expect(lines[1]).toContain('85'); // performance
+    expect(lines[1]).toContain('90'); // efficiency
+  });
+});
+
+describe('formatCSV', () => {
+  it('auto-detects recovery data type', () => {
+    const data: CombinedOutput = {
+      date: '2026-01-12',
+      fetched_at: '2026-01-12T15:00:00Z',
+      recovery: [mockRecovery],
+    };
+
+    const result = formatCSV(data);
+    expect(result).toContain('recovery_score');
+    expect(result).toContain('72');
+  });
+
+  it('uses explicit data type when provided', () => {
+    const data: CombinedOutput = {
+      date: '2026-01-12',
+      fetched_at: '2026-01-12T15:00:00Z',
+      recovery: [mockRecovery],
+      sleep: [mockSleep],
+    };
+
+    const result = formatCSV(data, 'sleep');
+    expect(result).toContain('sleep_performance_percentage');
+    expect(result).not.toContain('recovery_score');
+  });
+
+  it('returns message when no data available', () => {
+    const data: CombinedOutput = {
+      date: '2026-01-12',
+      fetched_at: '2026-01-12T15:00:00Z',
+    };
+
+    const result = formatCSV(data);
+    expect(result).toBe('No data available for CSV export');
   });
 });
