@@ -175,6 +175,96 @@ export async function login(): Promise<void> {
 }
 
 /**
+ * Start the OAuth login flow in headless mode (no browser)
+ * User manually opens URL and pastes callback
+ */
+export async function loginHeadless(): Promise<void> {
+  const clientId = process.env['WHOOP_CLIENT_ID'];
+  const clientSecret = process.env['WHOOP_CLIENT_SECRET'];
+
+  if (!clientId || !clientSecret) {
+    throw new AuthError(
+      'WHOOP_CLIENT_ID and WHOOP_CLIENT_SECRET environment variables are required.\n\n' +
+        'Quick setup:\n' +
+        '  1. Run: whoop init\n' +
+        '  2. Follow the prompts to configure credentials\n\n' +
+        'Or manually:\n' +
+        '  1. Go to https://developer.whoop.com\n' +
+        '  2. Create an app with Redirect URI: http://localhost:3000/callback\n' +
+        '  3. Set environment variables:\n' +
+        '     export WHOOP_CLIENT_ID="your-client-id"\n' +
+        '     export WHOOP_CLIENT_SECRET="your-client-secret"'
+    );
+  }
+
+  const redirectUri = getCallbackUrl();
+  const state = generateState();
+
+  // Build auth URL
+  const authUrl = buildAuthUrl(clientId, redirectUri, state);
+
+  console.error('');
+  console.error('🔐 Headless OAuth Flow');
+  console.error('━'.repeat(50));
+  console.error('');
+  console.error('1. Open this URL in your browser:');
+  console.error('');
+  console.error(`   ${authUrl}`);
+  console.error('');
+  console.error('2. Log in and authorize the app');
+  console.error('');
+  console.error('3. After authorization, you\'ll be redirected to a URL like:');
+  console.error('   http://localhost:3000/callback?code=xxx&state=xxx');
+  console.error('');
+  console.error('4. Copy and paste that FULL URL below:');
+  console.error('');
+
+  // Read URL from stdin
+  const readline = await import('node:readline');
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stderr,
+  });
+
+  const callbackUrl = await new Promise<string>((resolve) => {
+    rl.question('Callback URL: ', (answer) => {
+      rl.close();
+      resolve(answer.trim());
+    });
+  });
+
+  // Parse the callback URL
+  let url: URL;
+  try {
+    url = new URL(callbackUrl);
+  } catch {
+    throw new AuthError('Invalid URL. Please paste the full callback URL including http://');
+  }
+
+  const code = url.searchParams.get('code');
+  const returnedState = url.searchParams.get('state');
+
+  if (!code) {
+    throw new AuthError('No authorization code found in URL. Did authorization fail?');
+  }
+
+  if (returnedState !== state) {
+    throw new AuthError('State mismatch. This could be a security issue. Please try again.');
+  }
+
+  // Exchange code for tokens
+  console.error('');
+  console.error('Exchanging code for tokens...');
+  const tokens = await exchangeCode(code, clientId, clientSecret, redirectUri);
+
+  // Save tokens (encrypted)
+  saveTokens(tokens);
+
+  console.error('✅ Successfully authenticated!');
+  console.error(`Tokens stored in: ${getTokenDir()}`);
+}
+
+/**
  * Log out (delete stored tokens)
  */
 export function logout(): void {

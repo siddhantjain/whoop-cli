@@ -101,6 +101,7 @@ whoop --date 2026-01-10 --recovery --sleep
 |---------|-------------|
 | `whoop init` | Interactive setup wizard |
 | `whoop auth login` | Start OAuth flow |
+| `whoop auth login --headless` | Headless OAuth (for servers/VMs) |
 | `whoop auth logout` | Clear stored tokens |
 | `whoop auth status` | Check authentication status |
 | `whoop auth refresh` | Manually refresh tokens |

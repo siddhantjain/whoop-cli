@@ -8,7 +8,7 @@ import { createInterface } from 'node:readline';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { Command } from 'commander';
-import { login, logout, status as authStatus, refresh as authRefresh } from './auth/oauth.js';
+import { login, loginHeadless, logout, status as authStatus, refresh as authRefresh } from './auth/oauth.js';
 import {
   fetchData,
   fetchDataRange,
@@ -85,11 +85,16 @@ program
   .command('auth')
   .description('Manage authentication')
   .argument('<action>', 'login, logout, status, or refresh')
-  .action(async (action: string) => {
+  .option('--headless', 'Use headless mode (no browser, paste callback URL manually)')
+  .action(async (action: string, options: { headless?: boolean }) => {
     try {
       switch (action) {
         case 'login':
-          await login();
+          if (options.headless) {
+            await loginHeadless();
+          } else {
+            await login();
+          }
           break;
         case 'logout':
           logout();
