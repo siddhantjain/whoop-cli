@@ -3,7 +3,10 @@
  * WHOOP CLI - Command Line Interface
  */
 
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'node:fs';
+import { createInterface } from 'node:readline';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 import { Command } from 'commander';
 import { login, logout, status as authStatus, refresh as authRefresh } from './auth/oauth.js';
 import {
@@ -103,6 +106,122 @@ program
             ExitCode.GENERAL_ERROR
           );
       }
+    } catch (error) {
+      handleError(error);
+    }
+  });
+
+// ============================================================================
+// Init Command (Setup Wizard)
+// ============================================================================
+
+const CONFIG_DIR = join(homedir(), '.whoop-cli');
+const CONFIG_FILE = join(CONFIG_DIR, 'config.json');
+
+/**
+ * Prompt user for input
+ */
+function prompt(question: string, _hidden = false): Promise<string> {
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  return new Promise((resolve) => {
+    rl.question(question, (answer) => {
+      rl.close();
+      resolve(answer.trim());
+    });
+  });
+}
+
+/**
+ * Load config from file
+ */
+function loadConfig(): { clientId?: string; clientSecret?: string } {
+  if (!existsSync(CONFIG_FILE)) {
+    return {};
+  }
+  try {
+    return JSON.parse(readFileSync(CONFIG_FILE, 'utf8'));
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Save config to file
+ */
+function saveConfig(config: { clientId: string; clientSecret: string }): void {
+  if (!existsSync(CONFIG_DIR)) {
+    mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o700 });
+  }
+  writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), { mode: 0o600 });
+}
+
+program
+  .command('init')
+  .description('Interactive setup wizard for first-time users')
+  .action(async () => {
+    try {
+      console.log('');
+      console.log('🏃 WHOOP CLI Setup Wizard');
+      console.log('━'.repeat(40));
+      console.log('');
+      console.log('Before continuing, you need a WHOOP developer app:');
+      console.log('');
+      console.log('  1. Go to https://developer.whoop.com');
+      console.log('  2. Sign in with your WHOOP account');
+      console.log('  3. Create a new application');
+      console.log('  4. Set Redirect URI to: http://localhost:3000/callback');
+      console.log('  5. Copy your Client ID and Client Secret');
+      console.log('');
+
+      const existingConfig = loadConfig();
+
+      // Client ID
+      const defaultId = existingConfig.clientId
+        ? ` (current: ${existingConfig.clientId.substring(0, 8)}...)`
+        : '';
+      const clientId = await prompt(`Client ID${defaultId}: `);
+
+      if (!clientId && !existingConfig.clientId) {
+        throw new WhoopError('Client ID is required', ExitCode.GENERAL_ERROR);
+      }
+
+      // Client Secret
+      const defaultSecret = existingConfig.clientSecret ? ' (current: ********)' : '';
+      const clientSecret = await prompt(`Client Secret${defaultSecret}: `);
+
+      if (!clientSecret && !existingConfig.clientSecret) {
+        throw new WhoopError('Client Secret is required', ExitCode.GENERAL_ERROR);
+      }
+
+      // Save config
+      const finalConfig = {
+        clientId: clientId || existingConfig.clientId || '',
+        clientSecret: clientSecret || existingConfig.clientSecret || '',
+      };
+
+      saveConfig(finalConfig);
+
+      console.log('');
+      console.log('✅ Configuration saved to ~/.whoop-cli/config.json');
+      console.log('');
+      console.log('Next steps:');
+      console.log('  1. Set environment variables (add to your shell profile):');
+      console.log('');
+      console.log(`     export WHOOP_CLIENT_ID="${finalConfig.clientId}"`);
+      console.log(`     export WHOOP_CLIENT_SECRET="${finalConfig.clientSecret}"`);
+      console.log('');
+      console.log('  2. Authenticate:');
+      console.log('');
+      console.log('     whoop auth login');
+      console.log('');
+      console.log('  3. Start fetching data:');
+      console.log('');
+      console.log('     whoop summary');
+      console.log('');
     } catch (error) {
       handleError(error);
     }

@@ -32,29 +32,31 @@ npm install -g whoop-cli
 
 ## Quick Start
 
-### 1. Create a WHOOP Developer App
+### Option A: Interactive Setup (Recommended)
+
+```bash
+whoop init
+```
+
+This wizard guides you through:
+1. Creating a WHOOP developer app
+2. Saving your credentials
+3. Completing authentication
+
+### Option B: Manual Setup
 
 1. Go to [developer.whoop.com](https://developer.whoop.com)
 2. Create a new application
 3. Set redirect URI to `http://localhost:3000/callback`
 4. Note your Client ID and Client Secret
 
-### 2. Configure
-
 ```bash
 export WHOOP_CLIENT_ID="your-client-id"
 export WHOOP_CLIENT_SECRET="your-client-secret"
-```
-
-Or create a `.env` file in your working directory.
-
-### 3. Authenticate
-
-```bash
 whoop auth login
 ```
 
-This opens your browser for OAuth. Tokens are stored encrypted in `~/.whoop-cli/`.
+Tokens are stored encrypted in `~/.whoop-cli/`.
 
 ### 4. Fetch Data
 
@@ -93,10 +95,11 @@ whoop --date 2026-01-10 --recovery --sleep
 | `whoop export` | Bulk export data for a date range |
 | `whoop trends` | Analyze trends over a time period |
 
-### Auth Commands
+### Setup & Auth Commands
 
 | Command | Description |
 |---------|-------------|
+| `whoop init` | Interactive setup wizard |
 | `whoop auth login` | Start OAuth flow |
 | `whoop auth logout` | Clear stored tokens |
 | `whoop auth status` | Check authentication status |
